@@ -45,8 +45,6 @@ class GradeCalculator
                 !is_numeric($score) || $score < 0 || $score > 100 ||
                 !is_numeric($weight) || $weight < 0
             ) {
-                // In a real app, you might throw an exception or handle error.
-                // For this example, we'll skip invalid entries.
                 continue;
             }
 
@@ -71,9 +69,5 @@ class GradeCalculator
         return $grade >= 0 && $grade <= 100;
     }
 
-    // You might add methods here for:
-    // - Rounding grades to nearest integer/decimal
-    // - Calculating letter grades
-    // - Handling bonus points or deductions
-    // - etc.
+
 }
