@@ -1,0 +1,41 @@
+@startuml performance
+skinparam handwritten false
+skinparam style strict
+
+title Performance Testing Setup
+
+actor "Performance Tester" as Tester
+component "Apache JMeter" as JMeter
+component "Google Chrome DevTools" as DevTools
+cloud "Internet / Network" as Network
+rectangle "AllConnectEdu Application Server" as AppServer
+database "MySQL Database" as MySQLDB
+
+Tester --> JMeter : Configure Tests (Load, Concurrency)
+JMeter --> Network : Simulate Concurrent Users (HTTP/S Requests)
+Network --> AppServer : Requests Under Load
+
+AppServer --> MySQLDB : Database Queries
+MySQLDB --> AppServer : Query Results
+
+AppServer --> Network : Responses
+Network --> JMeter : Response Times / Metrics
+
+Tester --> DevTools : Monitor Client-Side Performance
+DevTools --> AppServer : Observe Page Load / Rendering
+
+note right of JMeter
+  Measures:
+  - Response Time
+  - Throughput
+  - Error Rate
+end note
+
+note left of DevTools
+  Measures:
+  - Page Load Time
+  - Rendering Performance
+  - Memory Usage
+end note
+
+@enduml

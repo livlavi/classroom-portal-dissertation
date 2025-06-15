@@ -1,0 +1,15 @@
+@startuml service_interaction
+title: AllConnectEdu Service Interaction
+actor Teacher
+participant "Web UI" as UI
+participant "Attendance Service" as Attendance
+participant "Database" as DB
+
+Teacher -> UI : Click 'Take Attendance'
+UI -> Attendance : submitAttendance(date, classId)
+Attendance -> DB : checkExistingAttendance(date, classId)
+DB --> Attendance : attendanceExists/doesNotExist
+Attendance -> DB : saveAttendance() [if doesNotExist]
+DB --> Attendance : success/failure
+Attendance -> UI : showSuccessOrError()
+@enduml

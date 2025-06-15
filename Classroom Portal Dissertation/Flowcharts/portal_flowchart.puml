@@ -1,0 +1,43 @@
+@startuml Classroom Portal
+skinparam monochrome true
+
+actor User
+
+participant "Login Page" as Login
+participant "Role Selection" as Role
+participant "Admin Dashboard" as Admin
+participant "Student Dashboard" as Student
+participant "Teacher Dashboard" as Teacher
+participant "Parent Dashboard" as Parent
+participant "Messaging System" as Chat
+participant "Database" as DB
+
+User -> Login: Enter credentials
+Login -> DB: Verify credentials
+DB --> Login: Credentials valid/invalid
+alt Invalid Credentials
+    Login --> User: Show error
+else Valid Credentials
+    Login -> Role: Redirect based on role
+    Role -> Admin: If Admin
+    Role -> Student: If Student
+    Role -> Teacher: If Teacher
+    Role -> Parent: If Parent
+    
+    loop User Interaction
+        Admin -> DB: Manage users/data
+        Student -> DB: View grades/assignments
+        Teacher -> DB: Submit grades/assignments
+        Parent -> DB: View student progress
+        
+        User -> Chat: Access messaging
+        Chat -> DB: Fetch/send messages
+        DB --> Chat: Return messages
+        Chat --> User: Display messages
+    end
+end
+
+User -> Login: Logout
+Login -> User: End session
+
+@enduml

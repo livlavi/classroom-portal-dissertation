@@ -1,0 +1,34 @@
+@startuml testing
+skinparam handwritten false
+skinparam style strict
+
+title AllConnectEdu Iterative Testing Methodology
+
+rectangle "Requirements Analysis & Design" as Requirements
+rectangle "Development (TDD)" as Development
+rectangle "Unit Testing" as Unit
+rectangle "Integration Testing" as Integration
+rectangle "User Acceptance Testing (UAT)" as UAT
+rectangle "Performance Evaluation" as Performance
+rectangle "Deployment & Monitoring" as Deployment
+rectangle "Feedback & Refinement" as Feedback
+
+Requirements --> Development : Define Features
+Development --> Unit : Code & Test
+Unit --> Integration : Verified Modules
+Integration --> UAT : Integrated System
+UAT --> Performance : User Approved Features
+Performance --> Deployment : Stable System
+Deployment --> Feedback : Live Usage Data
+Feedback --> Requirements : New Sprints / Improvements
+
+note bottom of Feedback
+  Agile Sprints
+  Continuous Improvement
+end note
+
+note "Think-Aloud Protocol" as ThinkAloudNote
+    UAT -[hidden]-> ThinkAloudNote
+
+
+@enduml

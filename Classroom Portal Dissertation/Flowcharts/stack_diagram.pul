@@ -1,0 +1,27 @@
+@startuml stack
+title: AllConnectEdu Tech Stack  
+package "Frontend" {
+  [HTML5]
+  [CSS3]
+  [JavaScript]
+  [Bootstrap 4.6]
+  [Chart.js]
+  [FullCalendar]
+}
+
+package "Backend" {
+  [PHP 8.2]
+}
+
+package "Database" {
+  [MySQL 8.0]
+}
+
+[HTML5] -down-> [PHP 8.2] : HTTP
+[CSS3] -down-> [PHP 8.2]
+[JavaScript] -down-> [PHP 8.2]
+[Bootstrap 4.6] -down-> [PHP 8.2]
+[Chart.js] -down-> [PHP 8.2]
+[FullCalendar] -down-> [PHP 8.2]
+[PHP 8.2] -down-> [MySQL 8.0] : PDO/MySQLi
+@enduml

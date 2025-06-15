@@ -1,0 +1,21 @@
+@startuml Student Dashboard
+title Student Dashboard Flowchart
+
+actor Student
+participant "Student Dashboard" as StudentDash
+participant "Assignments" as Assignments
+participant "Resources" as Resources
+participant "Messaging" as Messaging
+
+Student -> StudentDash: Access Student Dashboard
+StudentDash -> Assignments: View Assignments
+StudentDash -> Resources: Access Learning Resources
+StudentDash -> Messaging: Open Chat Modal
+
+Assignments --> StudentDash: Return to Dashboard
+Resources --> StudentDash: Return to Dashboard
+Messaging --> StudentDash: Close Chat Modal
+
+StudentDash --> Student: Logout or Exit
+
+@enduml

@@ -1,0 +1,28 @@
+@startuml Classroom Portal
+title Overall Portal Flowchart
+
+actor User
+participant "Portal" as Portal
+participant "Authentication System" as Auth
+participant "Dashboard Selector" as DashSelector
+participant "Admin Dashboard" as AdminDash
+participant "Student Dashboard" as StudentDash
+participant "Teacher Dashboard" as TeacherDash
+participant "Parent Dashboard" as ParentDash
+
+User -> Portal: Access Portal
+Portal -> Auth: Authenticate User
+Auth --> Portal: Authentication Success/Failure
+Portal -> DashSelector: Redirect Based on Role
+DashSelector -> AdminDash: If Role = Admin
+DashSelector -> StudentDash: If Role = Student
+DashSelector -> TeacherDash: If Role = Teacher
+DashSelector -> ParentDash: If Role = Parent
+
+AdminDash --> Portal: Logout or Switch Dashboard
+StudentDash --> Portal: Logout or Switch Dashboard
+TeacherDash --> Portal: Logout or Switch Dashboard
+ParentDash --> Portal: Logout or Switch Dashboard
+Portal --> User: Display Dashboard or Logout Confirmation
+
+@enduml

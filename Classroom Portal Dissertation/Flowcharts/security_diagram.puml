@@ -1,0 +1,67 @@
+@startuml Security
+title: AllConnectEdu Security Diagram
+skinparam handwritten false
+skinparam style strict
+
+title AllConnectEdu Multi-Layered Security Architecture
+
+rectangle "External Environment" as External {
+  actor User as User
+  cloud "Internet" as Internet
+}
+
+rectangle "Network Layer Security" as NetworkLayer {
+  component "TLS 1.3 Encryption\n(HTTPS)" as TLS
+  component "HTTP Strict Transport Security (HSTS)" as HSTS
+  component "Firewall / Load Balancer" as Firewall
+}
+
+rectangle "Application Layer Security" as ApplicationLayer {
+  component "Input Validation & Sanitization" as InputVal
+  component "Output Encoding (XSS)" as OutputEnc
+  component "CSRF Protection (Tokens)" as CSRF
+  component "Rate Limiting" as RateLimit
+  component "Session Management\n(Secure Cookies)" as SessionMgmt
+  component "Authentication & Authorization\n(Role-Based Access Control)" as AuthZ
+}
+
+rectangle "Data Layer Security" as DataLayer {
+  database "Encrypted Database (MySQL)" as DB
+  component "Encryption At Rest" as EncRest
+  component "Encrypted Backups" as EncBackup
+  component "Access Logging & Audit Trails" as Audit
+  component "Least Privilege Access" as LeastPriv
+}
+
+rectangle "Compliance & Operational Security" as ComplianceLayer {
+  component "GDPR Compliance\n(Consent, Rectification, Erasure)" as GDPR
+  component "Restricted Data Access\n(Role-Based Data Views)" as RestrictedAccess
+  component "Incident Response Procedures" as IncidentResponse
+  component "Business Continuity Planning" as BCP
+}
+
+
+User --> Internet : Request
+Internet --> Firewall : Traffic
+Firewall --> TLS : Secure Connection
+TLS --> HSTS : Enforced Protocol
+HSTS --> InputVal : Clean Request
+
+InputVal --> OutputEnc : Processed Request
+OutputEnc --> CSRF : Validated Request
+CSRF --> RateLimit : Token Verified
+RateLimit --> SessionMgmt : Rate Limited
+SessionMgmt --> AuthZ : Authenticated Session
+AuthZ --> DB : Authorized Data Access
+
+DB <-- EncRest : Data Storage
+DB <-- EncBackup : Backup Sync
+DB <-- Audit : Logging
+DB <-- LeastPriv : Access Control
+
+AuthZ -- RestrictedAccess : Enforce Policy
+RestrictedAccess -- GDPR : Compliance Link
+GDPR -- IncidentResponse : Incident Handling
+IncidentResponse -- BCP : Preparedness
+
+@enduml

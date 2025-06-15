@@ -1,0 +1,83 @@
+@startuml
+!theme plain
+title 2. Communication System
+
+' Stub for Users table (fully defined in "Core User & Role Management")
+class Users <<(U,#ADD1B2)>> {
+  + id: INT {PK}
+  role: ENUM
+}
+
+class ChatMessages {
+  + id: INT {PK}
+  sender_id: INT {FK}
+  receiver_id: INT {FK}
+  --
+  receiver_role: ENUM('teacher', 'student', 'parent')
+  message: TEXT
+  created_at: TIMESTAMP
+  read_status: TINYINT
+  sender_role: ENUM('teacher', 'student', 'parent', 'admin')
+}
+
+class Notifications {
+  + id: INT {PK}
+  sender_id: INT {FK}
+  --
+  message: VARCHAR(255)
+  created_at: DATETIME
+  target: VARCHAR(255)
+  type: VARCHAR(50)
+}
+
+class Newsletters {
+  + id: INT {PK}
+  sender_id: INT {FK}
+  --
+  subject: VARCHAR(255)
+  body: TEXT
+  target: VARCHAR(255)
+  status: ENUM('draft', 'sent')
+  scheduled_at: DATETIME
+  created_at: DATETIME
+}
+
+class Announcements {
+  + id: INT {PK}
+  teacher_id: INT {FK}
+  --
+  title: VARCHAR(255)
+  description: TEXT
+  created_at: TIMESTAMP
+}
+
+class AnnouncementRecipients {
+  + id: INT {PK}
+  announcement_id: INT {FK}
+  recipient_id: INT {FK}
+}
+
+class AnnouncementReads {
+  + id: INT {PK}
+  announcement_id: INT {FK}
+  user_id: INT {FK}
+  --
+  read_at: TIMESTAMP {Unique(announcement_id, user_id)}
+}
+
+' Relationships for communication
+Users "1" -- "M" ChatMessages : sender_id
+Users "1" -- "0..M" ChatMessages : receiver_id (optional)
+Users "1" -- "M" Notifications : sender_id
+Users "1" -- "M" Newsletters : sender_id
+Users "1" -- "M" Announcements : teacher_id (via Users.id with role 'teacher')
+
+Announcements "1" -- "M" AnnouncementRecipients : announcement_id
+Users "1" -- "M" AnnouncementRecipients : recipient_id
+Announcements "1" -- "M" AnnouncementReads : announcement_id
+Users "1" -- "M" AnnouncementReads : user_id
+
+note "Users table represents the central user identity, detailed in '1. Core User & Role Management'." as N1
+N1 .. Users
+
+@enduml
