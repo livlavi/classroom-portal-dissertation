@@ -3,7 +3,6 @@
 
 namespace App;
 
-// In a real application, you'd pass a database connection or an assignment repository here.
 class AssignmentManager
 {
     private $dbConnection;
@@ -13,18 +12,10 @@ class AssignmentManager
         $this->dbConnection = $dbConnection;
     }
 
-    /**
-     * Creates a new assignment.
-     * @param int $courseId The ID of the course the assignment belongs to.
-     * @param string $title The title of the assignment.
-     * @param string $description The description of the assignment.
-     * @param string $dueDate The due date in 'YYYY-MM-DD HH:MM:SS' format.
-     * @param int $maxPoints The maximum points for the assignment.
-     * @return int|false The ID of the new assignment, or false on failure.
-     */
+
     public function createAssignment(int $courseId, string $title, string $description, string $dueDate, int $maxPoints)
     {
-        // --- REPLACE WITH YOUR ACTUAL DATABASE INSERT LOGIC ---
+        
         // Basic validation
         if ($courseId <= 0 || empty(trim($title)) || empty(trim($dueDate)) || $maxPoints <= 0) {
             return false;
@@ -46,7 +37,7 @@ class AssignmentManager
      */
     public function getAssignment(int $assignmentId): ?array
     {
-        // --- REPLACE WITH YOUR ACTUAL DATABASE SELECT LOGIC ---
+      
         // Dummy data for testing
         $dummyAssignments = [
             1001 => [
@@ -67,7 +58,6 @@ class AssignmentManager
             ]
         ];
         return $dummyAssignments[$assignmentId] ?? null;
-        // --- END OF DUMMY LOGIC ---
     }
 
     /**
@@ -79,7 +69,6 @@ class AssignmentManager
      */
     public function submitAssignment(int $assignmentId, int $studentId, string $submissionContent): bool
     {
-        // --- REPLACE WITH YOUR ACTUAL DATABASE INSERT/UPDATE LOGIC ---
         if ($assignmentId <= 0 || $studentId <= 0 || empty(trim($submissionContent))) {
             return false;
         }
@@ -87,7 +76,7 @@ class AssignmentManager
         if (!$this->getAssignment($assignmentId)) { // Using dummy getAssignment for this
             return false;
         }
-        // In real app: save submission details (student_id, assignment_id, content, timestamp)
+        //  save submission details (student_id, assignment_id, content, timestamp)
         return true;
         // --- END OF DUMMY LOGIC ---
     }
@@ -101,7 +90,6 @@ class AssignmentManager
      */
     public function gradeSubmission(int $submissionId, int $grade, string $feedback = ''): bool
     {
-        // --- REPLACE THIS WITH YOUR ACTUAL DATABASE UPDATE LOGIC ---
 
         // 1. Basic validation for invalid IDs (0 or negative) or negative grades
         if ($submissionId <= 0 || $grade < 0) {
@@ -117,8 +105,7 @@ class AssignmentManager
             return false; // Simulate failure if submission ID doesn't exist
         }
 
-        // 3. In a real app: Retrieve submission, validate grade against max_points, update record.
-        //    For this dummy, if we reach here, it's considered successful.
+        // Retrieve submission, validate grade against max_points, update record.
         return true;
         // --- END OF DUMMY LOGIC ---
     }

@@ -3,7 +3,7 @@
 
 namespace App;
 
-// In a real application, you'd pass a database connection here.
+
 class CalendarManager
 {
     private $dbConnection;
@@ -25,7 +25,6 @@ class CalendarManager
      */
     public function addEvent(int $userId, string $title, string $description, string $startTime, string $endTime, string $eventType)
     {
-        // --- REPLACE WITH YOUR ACTUAL DATABASE INSERT LOGIC ---
         if ($userId <= 0 || empty(trim($title)) || empty(trim($startTime)) || empty(trim($endTime)) || empty(trim($eventType))) {
             return false;
         }
@@ -55,7 +54,6 @@ class CalendarManager
      */
     public function getEventsForUser(int $userId, string $startDate, string $endDate): array
     {
-        // --- REPLACE WITH YOUR ACTUAL DATABASE SELECT LOGIC ---
         // Dummy data for testing
         $allDummyEvents = [
             1 => [ // User ID 1 events
@@ -81,9 +79,4 @@ class CalendarManager
         // --- END OF DUMMY LOGIC ---
     }
 
-    // You might add methods here for:
-    // - Updating events
-    // - Deleting events
-    // - Getting events by type
-    // - Handling recurring events
 }

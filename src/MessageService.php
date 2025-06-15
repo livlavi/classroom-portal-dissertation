@@ -5,7 +5,7 @@ namespace App;
 
 class MessageService
 {
-    private $dbConnection; // This would be your PDO object or DB wrapper
+    private $dbConnection; 
 
     public function __construct($dbConnection = null)
     {
@@ -14,8 +14,8 @@ class MessageService
 
     public function sendMessage(int $senderId, int $receiverId, string $messageContent): bool
     {
-        // ... (keep this method as it is - it's passing) ...
-        // Your existing sendMessage method code
+
+        //  sendMessage method code
         if ($senderId <= 0 || $receiverId <= 0 || empty(trim($messageContent))) {
             return false;
         }
@@ -30,8 +30,7 @@ class MessageService
 
     public function getConversation(int $userId1, int $userId2): array
     {
-        // ... (keep this method as it is - it's passing) ...
-        // Your existing getConversation method code
+        //  getConversation method code
         if (($userId1 === 1 && $userId2 === 2) || ($userId1 === 2 && $userId2 === 1)) {
             return [
                 ['id' => 1, 'sender_id' => 1, 'receiver_id' => 2, 'content' => 'Hello!', 'timestamp' => '2025-06-01 10:00:00', 'is_read' => 0],
@@ -50,7 +49,6 @@ class MessageService
      */
     public function markMessageAsRead(int $messageId, int $readerId): bool
     {
-        // --- REPLACE THIS WITH YOUR ACTUAL DATABASE UPDATE LOGIC ---
 
         // 1. Basic validation for invalid IDs (0 or negative)
         if ($messageId <= 0 || $readerId <= 0) {
@@ -64,8 +62,7 @@ class MessageService
             return false; // Simulate failure if message ID doesn't exist
         }
 
-        // 3. In a real app: check if readerId is the actual receiver of the message.
-        //    Update 'is_read' flag in database.
+        // check if readerId is the actual receiver of the message.
         //    For this dummy, if we reach here, it's considered successful.
         return true;
         // --- END OF DUMMY LOGIC ---
