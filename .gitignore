@@ -1,0 +1,48 @@
+# Dependency directories
+vendor/
+node_modules/
+
+# Composer files (but keep composer.json and composer.lock)
+# composer.phar
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+logs/
+
+# Cache directories
+cache/
+tmp/
+temp/
+
+# Environment files (contain sensitive info)
+.env
+.env.local
+.env.production
+
+# Build directories
+build/
+dist/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# PHP specific
+*.cache
