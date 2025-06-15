@@ -1,6 +1,7 @@
 # Dependency directories
 vendor/
 node_modules/
+Classroom Portal Dissertation/Flowcharts/
 
 # Composer files (but keep composer.json and composer.lock)
 # composer.phar
