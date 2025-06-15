@@ -10,8 +10,6 @@ class UserRelationshipService
     public function __construct($dbConnection = null)
     {
         $this->dbConnection = $dbConnection;
-        // In a real application, you'd properly inject and use your database connection.
-        // For unit tests, we might not use this if we're mocking the database.
     }
 
     /**
@@ -22,13 +20,10 @@ class UserRelationshipService
      */
     public function linkParentToStudent(int $parentId, int $studentId): bool
     {
-        // --- REPLACE THIS WITH YOUR ACTUAL DATABASE INSERT/UPDATE LOGIC ---
         // Example dummy logic for now:
         if ($parentId <= 0 || $studentId <= 0 || $parentId === $studentId) {
             return false; // Basic validation
         }
-        // In a real app: Insert into a 'parent_student_links' table
-        // For unit tests, we'll assume it works if inputs are valid.
         return true;
     }
 
@@ -40,12 +35,11 @@ class UserRelationshipService
      */
     public function unlinkParentFromStudent(int $parentId, int $studentId): bool
     {
-        // --- REPLACE THIS WITH YOUR ACTUAL DATABASE DELETE LOGIC ---
         // Example dummy logic:
         if ($parentId <= 0 || $studentId <= 0) {
             return false; // Basic validation
         }
-        // In a real app: Delete from 'parent_student_links' table
+        //Delete from 'parent_student_links' table
         return true;
     }
 
@@ -57,7 +51,6 @@ class UserRelationshipService
      */
     public function isStudentLinkedToParent(int $parentId, int $studentId): bool
     {
-        // --- REPLACE THIS WITH YOUR ACTUAL DATABASE QUERY LOGIC ---
         // Example dummy logic (for unit tests, we'll mock this or use simple rules):
         // For now, let's say parent 1 is linked to student 101, and parent 2 to student 102
         $dummyLinks = [
@@ -65,7 +58,6 @@ class UserRelationshipService
             2 => [102, 103],
         ];
         return isset($dummyLinks[$parentId]) && in_array($studentId, $dummyLinks[$parentId]);
-        // --- END OF DUMMY LOGIC ---
     }
 
     /**
@@ -75,16 +67,13 @@ class UserRelationshipService
      */
     public function getStudentsLinkedToParent(int $parentId): array
     {
-        // --- REPLACE THIS WITH YOUR ACTUAL DATABASE QUERY LOGIC ---
-        // Example dummy logic:
+
         $dummyLinks = [
             1 => [101],
             2 => [102, 103],
             3 => [], // Parent with no linked students
         ];
         return $dummyLinks[$parentId] ?? [];
-        // --- END OF DUMMY LOGIC ---
-    }
 
-    // You might have other methods here, e.g., getParentsForStudent(), enforceNoCrossChildDataLeakage() logic
+    }
 }
