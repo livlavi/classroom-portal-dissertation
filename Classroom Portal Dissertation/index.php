@@ -1,26 +1,6 @@
 <?php
 session_start();
 
-// Redirect logged-in users to their respective dashboards
-if (isset($_SESSION['user_id'])) {
-    switch ($_SESSION['role']) {
-        case 'admin':
-            header("Location: Admin_Dashboard/PHP/admin_dashboard.php");
-            break;
-        case 'teacher':
-            header("Location: Teacher_Dashboard/PHP/teacher_dashboard.php");
-            break;
-        case 'student':
-            header("Location: PHP/student_dashboard.php");
-            break;
-        case 'parent':
-            header("Location: PHP/parent_dashboard.php");
-            break;
-        default:
-            header("Location: PHP/unauthorised.php");
-    }
-    exit;
-}
 ?>
 
 <!DOCTYPE html>
