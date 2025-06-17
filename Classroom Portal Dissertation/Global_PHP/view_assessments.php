@@ -1,406 +1,526 @@
 <?php
+// Start the session to access session variables like user_id and role
 session_start();
+
+// Include the database connection script
 require_once 'db.php';
 
-if (!isset($_SESSION['user_id'])) {
+// Check if the user is logged in and has a role of student or teacher
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['student', 'teacher'])) {
+    // If not logged in or invalid role, redirect to login page
     header("Location: login.php");
     exit();
 }
 
+// Store user ID and role from session for easier access
 $userId = $_SESSION['user_id'];
-$userRole = $_SESSION['role'];
+$role = $_SESSION['role'];
+
+// Get today's date in Y-m-d format to compare deadlines
 $today = date('Y-m-d');
 
-try {
-    if ($userRole === 'student') {
-        $stmt = $pdo->prepare("
-            SELECT a.id, a.title, a.description, a.due_date, a.attachment, a.subject, 
-                   t.first_name AS teacher_first_name, t.last_name AS teacher_last_name
-            FROM Assessments a
-            JOIN Assessment_Students as_s ON a.id = as_s.assessment_id
-            JOIN Users t ON a.teacher_id = t.id
-            WHERE as_s.student_id = :user_id AND a.due_date >= :today
-            ORDER BY a.due_date DESC
-        ");
-        $stmt->execute(['user_id' => $userId, 'today' => $today]);
-        $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Different SQL queries for students and teachers since they see different data
+if ($role === 'student') {
+    // STUDENT VIEW:
+    // Select assessments assigned to the student along with teacher name and any submissions made
+    $sql = "
+        SELECT 
+            a.id AS assessment_id,
+            a.title,
+            a.subject,
+            a.description,
+            a.due_date,
+            a.attachment AS attachment_path,
+            CONCAT(tu.first_name, ' ', tu.last_name) AS teacher_name,
+            sa.submission_date,
+            sa.status,
+            sa.grade,
+            sa.feedback,
+            sa.submission_content,
+            sa.submission_attachment
+        FROM Assessments a
+        JOIN Assessment_Students ast ON ast.assessment_id = a.id
+        JOIN Users tu ON tu.id = a.teacher_id
+        LEFT JOIN Submitted_Assessments sa ON sa.assessment_id = a.id AND sa.student_id = :student_id
+        WHERE ast.student_id = :student_id
+        ORDER BY a.due_date DESC
+    ";
 
-        $stmt = $pdo->prepare("
-            SELECT assessment_id FROM Submitted_Assessments WHERE student_id = :user_id
-        ");
-        $stmt->execute(['user_id' => $userId]);
-        $submittedAssessmentIds = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'assessment_id');
-    } elseif ($userRole === 'parent') {
-        $stmt = $pdo->prepare("SELECT child_user_id FROM Parents WHERE user_id = :user_id");
-        $stmt->execute(['user_id' => $userId]);
-        $child = $stmt->fetch(PDO::FETCH_ASSOC);
-        $childId = $child['child_user_id'] ?? null;
+    // Prepare and execute the query safely with PDO to prevent SQL injection
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['student_id' => $userId]);
 
-        if ($childId) {
-            $stmt = $pdo->prepare("
-                SELECT a.id, a.title, a.description, a.due_date, a.attachment, a.subject, 
-                       t.first_name AS teacher_first_name, t.last_name AS teacher_last_name
-                FROM Assessments a
-                JOIN Assessment_Students as_s ON a.id = as_s.assessment_id
-                JOIN Users t ON a.teacher_id = t.id
-                WHERE as_s.student_id = :child_id AND a.due_date >= :today
-                ORDER BY a.due_date DESC
-            ");
-            $stmt->execute(['child_id' => $childId, 'today' => $today]);
-            $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } else {
-            $assessments = [];
-        }
-    } else {
-        header("Location: dashboard.php");
-        exit();
-    }
-} catch (PDOException $e) {
-    error_log("Error fetching assessments: " . $e->getMessage());
-    $assessments = [];
+    // Fetch all the results as associative arrays
+    $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Link to student dashboard for the back button
+    $dashboardUrl = '../Student_Dashboard/PHP/student_dashboard.php';
+} elseif ($role === 'teacher') {
+    // TEACHER VIEW:
+    // Select assessments created by the teacher along with student submissions (if any)
+    $sql = "
+        SELECT 
+            a.id AS assessment_id,
+            a.title,
+            a.subject,
+            a.description,
+            a.due_date,
+            a.attachment AS attachment_path,
+            CONCAT(tu.first_name, ' ', tu.last_name) AS teacher_name,
+            sa.submission_date,
+            sa.status,
+            sa.grade,
+            sa.feedback,
+            sa.submission_content,
+            sa.submission_attachment,
+            CONCAT(su.first_name, ' ', su.last_name) AS student_name
+        FROM Assessments a
+        LEFT JOIN Submitted_Assessments sa ON sa.assessment_id = a.id
+        LEFT JOIN Users su ON su.id = sa.student_id
+        JOIN Users tu ON tu.id = a.teacher_id
+        WHERE a.teacher_id = :teacher_id
+        ORDER BY a.due_date DESC, su.last_name ASC
+    ";
+
+    // Prepare and execute query with the teacher's user ID
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['teacher_id' => $userId]);
+
+    // Fetch all results
+    $assessments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Link to teacher dashboard for the back button
+    $dashboardUrl = '../Teacher_Dashboard/PHP/teacher_dashboard.php';
 }
+
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>View Assessments</title>
-    <link rel="stylesheet" href="../CSS/view_assessments.css">
+    <meta charset="UTF-8" />
+    <!-- Dynamic page title depending on role -->
+    <title><?= $role === 'student' ? 'Your Assessments' : 'Assessments You Created' ?></title>
     <style>
-    .dashboard-btn {
-        background-color: #3498db;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 6px;
-        font-size: 16px;
-        cursor: pointer;
-        margin-bottom: 20px;
-    }
+        /* CSS styles for the page */
 
-    .dashboard-btn:hover {
-        background-color: #2980b9;
-    }
+        /* Body styles: font, background color, and spacing */
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9fafb;
+            margin: 0;
+            padding: 20px;
+        }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
+        /* Container to center content and limit width */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
 
-    th,
-    td {
-        padding: 12px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-    }
+        /* Back button styling: blue background, white text, rounded corners */
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 15px;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
 
-    th {
-        background-color: #007bff;
-        color: white;
-    }
+        /* Card container for each assessment */
+        .assessment-card {
+            background: white;
+            border-left: 6px solid #007bff;
+            /* blue left border */
+            border-radius: 8px;
+            box-shadow: 0 0 6px #ccc;
+            /* subtle shadow */
+            margin-bottom: 20px;
+            padding: 15px 20px;
+        }
 
-    tr:nth-child(even) {
-        background-color: #f2f2f2;
-    }
+        /* Special border color for overdue and not submitted assessments */
+        .assessment-card.overdue-not-submitted {
+            border-left-color: #dc3545 !important;
+            /* red */
+        }
 
-    tr:hover {
-        background-color: #ddd;
-    }
+        /* Header layout inside each card: flexbox for spacing */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            align-items: center;
+        }
 
-    .no-assessments {
-        padding: 20px;
-        color: #666;
-    }
+        /* Title style for assessment titles */
+        .title {
+            font-weight: 700;
+            font-size: 18px;
+            color: #0056b3;
+        }
 
-    .open-btn,
-    .view-reviewed-btn {
-        background-color: #28a745;
-        color: white;
-        border: none;
-        padding: 5px 10px;
-        border-radius: 3px;
-        cursor: pointer;
-        margin-left: 5px;
-    }
+        /* Due date styling */
+        .due-date {
+            font-size: 14px;
+            color: #333;
+        }
 
-    .open-btn:hover,
-    .view-reviewed-btn:hover {
-        background-color: #218838;
-    }
+        /* Status badge style (like a label) */
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 10px;
+        }
 
-    .assessment-details {
-        margin-top: 20px;
-        padding: 15px;
-        background-color: #f9f9f9;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        display: none;
-    }
+        /* Different colors for submission status badges */
+        .submitted {
+            background-color: #d4edda;
+            color: #155724;
+        }
 
-    .assessment-details.active {
-        display: block;
-    }
+        .pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
 
-    .assessment-details textarea {
-        width: 100%;
-        height: 150px;
-        margin-bottom: 10px;
-        padding: 8px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        resize: vertical;
-    }
+        .rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
 
-    .assessment-details .disabled {
-        background-color: #e9ecef;
-        color: #6c757d;
-        cursor: not-allowed;
-        opacity: 0.7;
-    }
+        .not-submitted {
+            background-color: #e2e3e5;
+            color: #6c757d;
+        }
 
-    .submitted-message {
-        color: #28a745;
-        font-style: italic;
-    }
+        .overdue-not-submitted {
+            background-color: #dc3545;
+            color: white;
+            font-weight: 700;
+        }
 
-    .alert {
-        padding: 10px;
-        margin-bottom: 15px;
-        border-radius: 5px;
-        display: none;
-    }
+        /* Container for buttons below the card header */
+        .buttons {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            /* space between buttons */
+        }
 
-    .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
+        /* Button and linked buttons styling */
+        button,
+        a button {
+            background: #e9f0ff;
+            border: 1px solid #b3d1ff;
+            border-radius: 5px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #004085;
+            transition: background 0.2s ease-in-out;
+            text-decoration: none;
+        }
 
-    .alert-error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
+        /* Hover effect on buttons */
+        button:hover,
+        a button:hover {
+            background: #cce0ff;
+        }
 
-    body.dark-mode {
-        background-color: #333;
-        color: #fff;
-    }
+        /* Hidden detail sections by default */
+        .details {
+            display: none;
+            margin-top: 10px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            font-size: 14px;
+            color: #333;
+        }
 
-    body.dark-mode table {
-        background-color: #444;
-        color: #fff;
-    }
-
-    body.dark-mode th {
-        background-color: #0056b3;
-    }
-
-    body.dark-mode tr:nth-child(even) {
-        background-color: #555;
-    }
-
-    body.dark-mode tr:hover {
-        background-color: #666;
-    }
-
-    body.dark-mode .no-assessments {
-        color: #ccc;
-    }
-
-    body.dark-mode .open-btn,
-    body.dark-mode .view-reviewed-btn {
-        background-color: #28a745;
-        color: white;
-    }
-
-    body.dark-mode .open-btn:hover,
-    body.dark-mode .view-reviewed-btn:hover {
-        background-color: #218838;
-    }
-
-    body.dark-mode .assessment-details {
-        background-color: #444;
-        border-color: #555;
-    }
-
-    body.dark-mode .assessment-details textarea {
-        background-color: #555;
-        border-color: #666;
-        color: #fff;
-    }
-
-    body.dark-mode .assessment-details .disabled {
-        background-color: #6c757d;
-        color: #fff;
-    }
-
-    body.dark-mode .submitted-message {
-        color: #28a745;
-    }
-
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 999;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        background-color: rgba(0, 0, 0, 0.5);
-    }
-
-    .modal-content {
-        background-color: #fff;
-        margin: 10% auto;
-        padding: 20px;
-        border-radius: 8px;
-        width: 70%;
-        max-width: 800px;
-        position: relative;
-    }
-
-    .close-modal {
-        position: absolute;
-        top: 8px;
-        right: 12px;
-        color: #aaa;
-        font-size: 24px;
-        font-weight: bold;
-        cursor: pointer;
-    }
-
-    .close-modal:hover {
-        color: #333;
-    }
-
-    textarea {
-        width: 100%;
-        height: 150px;
-        margin-bottom: 10px;
-    }
+        /* iframe style for viewing attachments */
+        iframe {
+            width: 100%;
+            height: 350px;
+            border: none;
+            margin-top: 5px;
+        }
     </style>
+
+    <script>
+        // JavaScript function to toggle visibility of details sections
+        function toggleDetails(id, type) {
+            // Construct element ID from type and assessment ID
+            const elem = document.getElementById(type + '-' + id);
+            if (!elem) return; // safety check
+
+            // Toggle between block and none display
+            elem.style.display = elem.style.display === 'block' ? 'none' : 'block';
+        }
+    </script>
 </head>
 
 <body>
-    <h1>Assessments</h1>
+    <div class="container">
+        <!-- Back button to the dashboard -->
+        <a href="<?= htmlspecialchars($dashboardUrl) ?>" class="back-btn">← Back to Dashboard</a>
 
+        <!-- Page header title depending on user role -->
+        <h2><?= $role === 'student' ? 'Your Assessments' : 'Assessments You Created' ?></h2>
 
-    <button class="dashboard-btn" onclick="window.location.href='../Student_Dashboard/PHP/student_dashboard.php'">Return
-        to Dashboard</button>
+        <?php if (empty($assessments)): ?>
+            <!-- Show message if there are no assessments -->
+            <p><?= $role === 'student' ? 'You have no assigned assessments at this time.' : 'You have not created any assessments yet.' ?>
+            </p>
+        <?php else: ?>
 
-    <?php if ($userRole === 'student'): ?> <?php if (empty($assessments)): ?> <p>No pending assessments available.</p>
-    <?php else: ?>
-    <table>
-        <thead>
-            <tr>
-                <th>Title</th>
-                <th>Subject</th>
-                <th>Description</th>
-                <th>Due Date</th>
-                <th>Attachment</th>
-                <th>Teacher</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($assessments as $assessment): ?>
-            <tr>
-                <td><?= htmlspecialchars($assessment['title']) ?></td>
-                <td><?= htmlspecialchars($assessment['subject']) ?></td>
-                <td><?= htmlspecialchars($assessment['description']) ?></td>
-                <td><?= htmlspecialchars($assessment['due_date']) ?></td>
-                <td>
-                    <?php if ($assessment['attachment']): ?>
-                    <a href="<?= htmlspecialchars($assessment['attachment']) ?>" target="_blank">Download</a>
-                    <?php else: ?>No attachment<?php endif; ?>
-                </td>
-                <td><?= htmlspecialchars($assessment['teacher_first_name'] . ' ' . $assessment['teacher_last_name']) ?>
-                </td>
-                <td>
-                    <?php if (!in_array($assessment['id'], $submittedAssessmentIds)): ?>
-                    <button class="open-btn"
-                        onclick="openModal(<?= htmlspecialchars(json_encode($assessment)) ?>)">Open</button>
-                    <?php else: ?>
-                    <span class="submitted-message">Submitted</span>
-                    <button class="view-reviewed-btn"
-                        onclick="location.href='view_reviewed_assessments.php?assessment_id=<?= $assessment['id'] ?>'">
-                        View Reviewed
-                    </button>
-                    <?php endif; ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <?php endif; ?>
-    <?php else: ?>
-    <h2>Child's Assessments</h2>
-    <!-- Parent table (similar to above, without actions) -->
-    <?php endif; ?>
+            <?php if ($role === 'student'): ?>
 
-    <!-- Modal -->
-    <div id="assessmentModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeModal()">&times;</span>
-            <h2 id="modalTitle"></h2>
-            <p><strong>Subject:</strong> <span id="modalSubject"></span></p>
-            <p><strong>Description:</strong> <span id="modalDescription"></span></p>
-            <p><strong>Due Date:</strong> <span id="modalDueDate"></span></p>
-            <p><strong>Attachment:</strong> <span id="modalAttachment"></span></p>
+                <!-- STUDENT VIEW: Loop through each assessment assigned to student -->
+                <?php foreach ($assessments as $a):
+                    // Store some variables for easy access and clarity
+                    $dueDate = $a['due_date'];
+                    $status = $a['status'];
+                    $isPastDue = ($dueDate < $today); // check if the due date has passed
 
-            <form id="modalForm" action="submit_assessment.php" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="assessment_id" id="modalAssessmentId">
-                <label>Your Solution:</label>
-                <textarea name="submission_content" required></textarea>
-                <br>
-                <label>Upload File:</label>
-                <input type="file" name="submission_attachment">
-                <br><br>
-                <button type="submit">Submit Assessment</button>
-            </form>
-        </div>
+                    // Default CSS class and label for submission status
+                    $statusClass = 'not-submitted';
+                    $statusLabel = 'Not Submitted';
+
+                    // Change CSS class and label depending on status and due date
+                    if ($isPastDue && (!$status || $status === 'rejected')) {
+                        $statusClass = 'overdue-not-submitted';
+                        $statusLabel = 'Overdue & Not Submitted';
+                    } elseif ($status === 'reviewed') {
+                        $statusClass = 'submitted';
+                        $statusLabel = 'Reviewed';
+                    } elseif ($status === 'pending') {
+                        $statusClass = 'pending';
+                        $statusLabel = 'Pending Review';
+                    } elseif ($status === 'rejected') {
+                        $statusClass = 'rejected';
+                        $statusLabel = 'Rejected';
+                    }
+                ?>
+                    <div class="assessment-card <?= $statusClass ?>">
+                        <div class="header">
+                            <div>
+                                <!-- Display the assessment title, due date, and status badge -->
+                                <span class="title"><?= htmlspecialchars($a['title']) ?></span>
+                                <span class="due-date">(Due: <?= htmlspecialchars($dueDate) ?>)</span>
+                                <span class="status-badge <?= $statusClass ?>"><?= $statusLabel ?></span>
+                            </div>
+                            <div style="font-size: 14px; color:#555;">
+                                <!-- Show subject and teacher name -->
+                                Subject: <?= htmlspecialchars($a['subject']) ?><br>
+                                Teacher: <?= htmlspecialchars($a['teacher_name']) ?>
+                            </div>
+                        </div>
+
+                        <div class="buttons">
+                            <!-- Button to toggle description visibility -->
+                            <button onclick="toggleDetails(<?= $a['assessment_id'] ?>, 'desc')">View Description</button>
+
+                            <!-- Button to view attachment if there is one -->
+                            <?php if ($a['attachment_path']): ?>
+                                <button onclick="toggleDetails(<?= $a['assessment_id'] ?>, 'attach')">View Attachment</button>
+                            <?php endif; ?>
+
+                            <!-- Button to view feedback if assessment has a status -->
+                            <?php if ($status): ?>
+                                <button onclick="toggleDetails(<?= $a['assessment_id'] ?>, 'feedback')">View Feedback</button>
+                            <?php endif; ?>
+
+                            <!-- Button to view student's own submission if exists -->
+                            <?php if ($a['submission_content'] || $a['submission_attachment']): ?>
+                                <button onclick="toggleDetails(<?= $a['assessment_id'] ?>, 'submission')">View Your Submission</button>
+                            <?php endif; ?>
+
+                            <!-- Show submit button only if due date not passed and not submitted or rejected -->
+                            <?php if (!$isPastDue && (!$status || $status === 'rejected')): ?>
+                                <a href="submit_assessment.php?assessment_id=<?= $a['assessment_id'] ?>"><button>Submit</button></a>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Hidden description details -->
+                        <div class="details" id="desc-<?= $a['assessment_id'] ?>">
+                            <strong>Description:</strong>
+                            <p><?= nl2br(htmlspecialchars($a['description'])) ?></p>
+                        </div>
+
+                        <!-- Hidden attachment iframe -->
+                        <?php if ($a['attachment_path']): ?>
+                            <div class="details" id="attach-<?= $a['assessment_id'] ?>">
+                                <strong>Attachment:</strong>
+                                <iframe src="<?= htmlspecialchars($a['attachment_path']) ?>"></iframe>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Hidden feedback details -->
+                        <?php if ($status): ?>
+                            <div class="details" id="feedback-<?= $a['assessment_id'] ?>">
+                                <p><strong>Submission Date:</strong> <?= htmlspecialchars($a['submission_date']) ?></p>
+                                <p><strong>Grade:</strong> <?= htmlspecialchars($a['grade']) ?></p>
+                                <p><strong>Feedback:</strong><br><?= nl2br(htmlspecialchars($a['feedback'])) ?></p>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Hidden submission content and attachments -->
+                        <?php if ($a['submission_content'] || $a['submission_attachment']): ?>
+                            <div class="details" id="submission-<?= $a['assessment_id'] ?>">
+                                <p><strong>Your Submission:</strong><br><?= nl2br(htmlspecialchars($a['submission_content'])) ?></p>
+                                <?php if ($a['submission_attachment']): ?>
+                                    <p><strong>Submitted Attachment:</strong></p>
+                                    <iframe src="<?= htmlspecialchars($a['submission_attachment']) ?>"></iframe>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+
+            <?php elseif ($role === 'teacher'): ?>
+
+                <!-- TEACHER VIEW -->
+
+                <?php
+                // Group submissions by assessment id for easier display of all submissions under each assessment
+                $groupedAssessments = [];
+                foreach ($assessments as $row) {
+                    $id = $row['assessment_id'];
+                    // If this assessment hasn't been added yet, create a new entry
+                    if (!isset($groupedAssessments[$id])) {
+                        $groupedAssessments[$id] = [
+                            'assessment_id' => $id,
+                            'title' => $row['title'],
+                            'subject' => $row['subject'],
+                            'description' => $row['description'],
+                            'due_date' => $row['due_date'],
+                            'attachment_path' => $row['attachment_path'],
+                            'teacher_name' => $row['teacher_name'],
+                            'submissions' => []
+                        ];
+                    }
+                    // If there is a student submission, add it to the submissions array
+                    if ($row['student_name']) {
+                        $groupedAssessments[$id]['submissions'][] = [
+                            'student_name' => $row['student_name'],
+                            'submission_date' => $row['submission_date'],
+                            'status' => $row['status'],
+                            'grade' => $row['grade'],
+                            'feedback' => $row['feedback'],
+                            'submission_content' => $row['submission_content'],
+                            'submission_attachment' => $row['submission_attachment']
+                        ];
+                    }
+                }
+                ?>
+
+                <!-- Loop through grouped assessments -->
+                <?php foreach ($groupedAssessments as $a): ?>
+                    <div class="assessment-card">
+                        <div class="header">
+                            <div>
+                                <!-- Assessment title and due date -->
+                                <span class="title"><?= htmlspecialchars($a['title']) ?></span>
+                                <span class="due-date">(Due: <?= htmlspecialchars($a['due_date']) ?>)</span>
+                            </div>
+                            <div style="font-size: 14px; color:#555;">
+                                Subject: <?= htmlspecialchars($a['subject']) ?><br>
+                                Created by: <?= htmlspecialchars($a['teacher_name']) ?>
+                            </div>
+                        </div>
+
+                        <div class="buttons">
+                            <!-- Toggle description -->
+                            <button onclick="toggleDetails(<?= $a['assessment_id'] ?>, 'desc')">View Description</button>
+                            <!-- Toggle attachment if exists -->
+                            <?php if ($a['attachment_path']): ?>
+                                <button onclick="toggleDetails(<?= $a['assessment_id'] ?>, 'attach')">View Attachment</button>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="details" id="desc-<?= $a['assessment_id'] ?>">
+                            <p><?= nl2br(htmlspecialchars($a['description'])) ?></p>
+                        </div>
+
+                        <!-- Attachment -->
+                        <?php if ($a['attachment_path']): ?>
+                            <div class="details" id="attach-<?= $a['assessment_id'] ?>">
+                                <iframe src="<?= htmlspecialchars($a['attachment_path']) ?>"></iframe>
+                            </div>
+                        <?php endif; ?>
+
+                        <h4>Student Submissions</h4>
+
+                        <!-- If no submissions, display a message -->
+                        <?php if (empty($a['submissions'])): ?>
+                            <p>No submissions yet for this assessment.</p>
+                        <?php else: ?>
+                            <!-- Loop through all submissions for this assessment -->
+                            <?php foreach ($a['submissions'] as $sub):
+                                // Determine CSS class and label for submission status
+                                $statusClass = 'not-submitted';
+                                $statusLabel = 'Not Submitted';
+
+                                if ($sub['status'] === 'reviewed') {
+                                    $statusClass = 'submitted';
+                                    $statusLabel = 'Reviewed';
+                                } elseif ($sub['status'] === 'pending') {
+                                    $statusClass = 'pending';
+                                    $statusLabel = 'Pending Review';
+                                } elseif ($sub['status'] === 'rejected') {
+                                    $statusClass = 'rejected';
+                                    $statusLabel = 'Rejected';
+                                }
+                            ?>
+                                <div class="assessment-card <?= $statusClass ?>" style="margin-bottom:10px;">
+                                    <strong>Student:</strong> <?= htmlspecialchars($sub['student_name']) ?><br>
+                                    <strong>Submission Date:</strong> <?= htmlspecialchars($sub['submission_date']) ?><br>
+                                    <strong>Status:</strong> <span class="status-badge <?= $statusClass ?>"><?= $statusLabel ?></span><br>
+
+                                    <button
+                                        onclick="toggleDetails('subfeedback-<?= $a['assessment_id'] . '-' . md5($sub['student_name']) ?>', 'sub')">View
+                                        Feedback</button>
+                                    <button
+                                        onclick="toggleDetails('subcontent-<?= $a['assessment_id'] . '-' . md5($sub['student_name']) ?>', 'sub')">View
+                                        Submission</button>
+
+                                    <!-- Feedback section hidden by default -->
+                                    <div class="details" id="subfeedback-<?= $a['assessment_id'] . '-' . md5($sub['student_name']) ?>">
+                                        <p><strong>Grade:</strong> <?= htmlspecialchars($sub['grade']) ?></p>
+                                        <p><strong>Feedback:</strong><br><?= nl2br(htmlspecialchars($sub['feedback'])) ?></p>
+                                    </div>
+
+                                    <!-- Submission content hidden by default -->
+                                    <div class="details" id="subcontent-<?= $a['assessment_id'] . '-' . md5($sub['student_name']) ?>">
+                                        <p><strong>Submission
+                                                Content:</strong><br><?= nl2br(htmlspecialchars($sub['submission_content'])) ?></p>
+                                        <?php if ($sub['submission_attachment']): ?>
+                                            <p><strong>Attachment:</strong></p>
+                                            <iframe src="<?= htmlspecialchars($sub['submission_attachment']) ?>"></iframe>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+
+                    </div>
+                <?php endforeach; ?>
+
+            <?php endif; ?>
+
+        <?php endif; ?>
+
     </div>
-
-    <script>
-    const modal = document.getElementById('assessmentModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalSubject = document.getElementById('modalSubject');
-    const modalDescription = document.getElementById('modalDescription');
-    const modalDueDate = document.getElementById('modalDueDate');
-    const modalAttachment = document.getElementById('modalAttachment');
-    const modalAssessmentId = document.getElementById('modalAssessmentId');
-
-    function openModal(assessment) {
-        modalTitle.textContent = assessment.title;
-        modalSubject.textContent = assessment.subject;
-        modalDescription.textContent = assessment.description;
-        modalDueDate.textContent = assessment.due_date;
-        modalAssessmentId.value = assessment.id;
-
-        if (assessment.attachment) {
-            modalAttachment.innerHTML = `<a href="${assessment.attachment}" target="_blank">Download</a>`;
-        } else {
-            modalAttachment.textContent = "No attachment";
-        }
-
-        modal.style.display = "block";
-    }
-
-    function closeModal() {
-        modal.style.display = "none";
-    }
-
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            closeModal();
-        }
-    };
-    </script>
 </body>
 
 </html>

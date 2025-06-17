@@ -43,61 +43,61 @@ try {
     <title>Teacher Dashboard</title>
     <link rel="stylesheet" href="../CSS/teacher_dashboard.css">
     <style>
-    /* Button Styling */
-    button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        margin: 5px;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
+        /* Button Styling */
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
 
-    button:hover {
-        background-color: #0056b3;
-    }
+        button:hover {
+            background-color: #0056b3;
+        }
 
-    /* Section Styling */
-    .section {
-        margin-bottom: 20px;
-    }
+        /* Section Styling */
+        .section {
+            margin-bottom: 20px;
+        }
 
-    .section h2 {
-        margin-bottom: 10px;
-    }
+        .section h2 {
+            margin-bottom: 10px;
+        }
 
-    /* Sidebar Styling */
-    .sidebar ul {
-        list-style: none;
-        padding: 0;
-    }
+        /* Sidebar Styling */
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
 
-    .sidebar ul li {
-        margin: 10px 0;
-    }
+        .sidebar ul li {
+            margin: 10px 0;
+        }
 
-    .sidebar ul li a {
-        text-decoration: none;
-        color: white;
-        font-weight: bold;
-    }
+        .sidebar ul li a {
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+        }
 
-    .sidebar ul li a:hover {
-        color: #ecf0f1;
-    }
+        .sidebar ul li a:hover {
+            color: #ecf0f1;
+        }
 
-    /* Homework and Assessments Div Styling */
-    .homework-actions,
-    .assessment-actions {
-        margin-bottom: 10px;
-    }
+        /* Homework and Assessments Div Styling */
+        .homework-actions,
+        .assessment-actions {
+            margin-bottom: 10px;
+        }
 
-    body.dark-mode .section {
-        background-color: #444;
-        color: #fff;
-    }
+        body.dark-mode .section {
+            background-color: #444;
+            color: #fff;
+        }
     </style>
 </head>
 
@@ -156,6 +156,7 @@ try {
             <h2>Assessments</h2>
             <div class="assessment-actions">
                 <button onclick="location.href='add_assessment.php'">Add Assessment</button>
+                <button onclick="location.href='../../Global_PHP/view_assessments.php'">View My Assessments</button>
                 <button onclick="location.href='../../Global_PHP/submitted_assessment.php'">Check Submitted
                     Assessments</button>
                 <button onclick="location.href='../../Global_PHP/view_reviewed_assessments.php'">View Reviewed
@@ -182,16 +183,16 @@ try {
 
     <script src="../JavaScript/teacher_dashboard.js"></script>
     <script>
-    // Sidebar toggle and dark mode
-    document.getElementById("dark-mode-toggle")?.addEventListener("click", () => {
-        document.body.classList.toggle("dark-mode");
-        document.cookie = `dark_mode=${document.body.classList.contains("dark-mode")}; path=/`;
-    });
+        // Sidebar toggle and dark mode
+        document.getElementById("dark-mode-toggle")?.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            document.cookie = `dark_mode=${document.body.classList.contains("dark-mode")}; path=/`;
+        });
 
-    // Open chat modal
-    document.getElementById("open-chat-modal")?.addEventListener("click", () => {
-        window.open("/Classroom Portal Dissertation/Messaging_Chat/chat.php", "_blank");
-    });
+        // Open chat modal
+        document.getElementById("open-chat-modal")?.addEventListener("click", () => {
+            window.open("/Classroom Portal Dissertation/Messaging_Chat/chat.php", "_blank");
+        });
     </script>
 </body>
 

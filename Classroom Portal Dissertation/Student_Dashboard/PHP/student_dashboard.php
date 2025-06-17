@@ -51,68 +51,68 @@ try {
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
 
     <style>
-    /* Modal Overlay */
-    #modalOverlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 900;
-    }
+        /* Modal Overlay */
+        #modalOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 900;
+        }
 
-    /* Calendar Modal */
-    #calendarModal {
-        display: none;
-        position: fixed;
-        top: 10%;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 90%;
-        max-width: 900px;
-        height: 80vh;
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
-        z-index: 1000;
-        overflow-y: auto;
-    }
+        /* Calendar Modal */
+        #calendarModal {
+            display: none;
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 900px;
+            height: 80vh;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
 
-    #calendarModal button.closeBtn {
-        float: right;
-        font-size: 24px;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        line-height: 1;
-    }
+        #calendarModal button.closeBtn {
+            float: right;
+            font-size: 24px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            line-height: 1;
+        }
 
 
-    /* Add Event Modal */
-    #eventModal {
-        display: none;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        z-index: 1100;
-        width: 300px;
-    }
+        /* Add Event Modal */
+        #eventModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 1100;
+            width: 300px;
+        }
 
-    #eventModal label {
-        font-weight: bold;
-    }
+        #eventModal label {
+            font-weight: bold;
+        }
 
-    body.modal-open {
-        overflow: hidden;
-    }
+        body.modal-open {
+            overflow: hidden;
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
@@ -147,11 +147,11 @@ try {
             <li><a href="../../Teacher_Dashboard/PHP/view_announcements.php">
                     Announcements
                     <?php if ($unreadCount > 0): ?>
-                    <span class="badge"><?= $unreadCount ?></span>
+                        <span class="badge"><?= $unreadCount ?></span>
                     <?php endif; ?>
                 </a></li>
-            <li><a href="#newsletters">Newsletters</a></li>
-            <li><a href="#calendar">Calendar</a></li>
+            <li><a href="../../Global_PHP/view_newsletters.php">Newsletters</a></li>
+            <li><button onclick="openCalendarPopup()">View Calendar</button></li>
         </ul>
     </aside>
 
@@ -191,7 +191,7 @@ try {
                 <button>
                     View Announcements
                     <?php if ($unreadCount > 0): ?>
-                    <span class="badge"><?= $unreadCount ?></span>
+                        <span class="badge"><?= $unreadCount ?></span>
                     <?php endif; ?>
                 </button>
             </a>

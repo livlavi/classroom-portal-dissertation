@@ -2,7 +2,7 @@
 // db.php
 
 $host = 'localhost';
-$dbname = 'classroom_management'; // Ensure the database name is correct
+$dbname = 'classroom_management';
 $username = 'root';
 $password = '';
 
@@ -12,4 +12,3 @@ try {
 } catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
 }
-?>
